@@ -1,16 +1,33 @@
-import React, { useEffect } from 'react';
-import { View, Text, Button, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, Button, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 
 const DietScreen = ({ navigation }) => {
   const dispatch = useDispatch();
   const diets = useSelector((state) => state.form.diets);
+  const selectedDiets = useSelector((state) => state.form.selectedDiets);
+  const [localSelection, setLocalSelection] = useState([]);
 
   useEffect(() => {
     dispatch({ type: 'FETCH_DIETS', payload: 'Diets.json' });
   }, [dispatch]);
 
+  useEffect(() => {
+    setLocalSelection(selectedDiets);
+  }, [selectedDiets]);
+
+  const toggleDiet = (id) => {
+    setLocalSelection((prev) =>
+      prev.includes(id) ? prev.filter((dietId) => dietId !== id) : [...prev, id]
+    );
+  };
+
   const handleSubmit = () => {
+    if (localSelection.length === 0) {
+      Alert.alert('Validation Error', 'Please select at least one diet.');
+      return;
+    }
+    dispatch({ type: 'SET_SELECTED_DIETS', payload: localSelection });
     navigation.navigate('Allergies');
   };
 
@@ -21,7 +38,13 @@ const DietScreen = ({ navigation }) => {
         data={diets}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.option}>
+          <TouchableOpacity
+            style={[
+              styles.option,
+              localSelection.includes(item.id) && styles.selectedOption,
+            ]}
+            onPress={() => toggleDiet(item.id)}
+          >
             <Text>{item.name}</Text>
           </TouchableOpacity>
         )}
@@ -46,6 +69,9 @@ const styles = StyleSheet.create({
     marginVertical: 5,
     backgroundColor: '#f0f0f0',
     borderRadius: 5,
+  },
+  selectedOption: {
+    backgroundColor: '#add8e6',
   },
 });
 
